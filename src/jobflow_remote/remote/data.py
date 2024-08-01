@@ -276,7 +276,6 @@ def check_additional_stores(job: dict | Job, store: JobStore) -> list[str]:
         The list of names of the missing additional stores.
         An empty list if no store is missing.
     """
-    raise ValueError(f"Hi from check_additional_stores, job is {job}")
     if isinstance(job, dict):
         additional_store_names = set(job) - JOB_INIT_ARGS
     else:
