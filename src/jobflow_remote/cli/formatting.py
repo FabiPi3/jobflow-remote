@@ -26,14 +26,20 @@ if TYPE_CHECKING:
     from jobflow_remote.jobs.upgrade import UpgradeAction
 
 
-def get_job_info_table(jobs_info: list[JobInfo], verbosity: int) -> Table:
+def get_job_info_table(
+    jobs_info: list[JobInfo],
+    verbosity: int,
+    stored_data_keys: list[str] | None = None,
+    skip_job_id: bool = False,
+) -> Table:
     time_zone_str = f" [{time.tzname[0]}]"
 
     table = Table(title="Jobs info")
     table.add_column("DB id")
     table.add_column("Name")
     table.add_column("State")
-    table.add_column("Job id  (Index)")
+    if not skip_job_id:
+        table.add_column("Job id  (Index)")
 
     table.add_column("Worker")
     table.add_column("Last updated" + time_zone_str)
@@ -49,6 +55,10 @@ def get_job_info_table(jobs_info: list[JobInfo], verbosity: int) -> Table:
     if verbosity >= 2:
         table.add_column("Lock id")
         table.add_column("Lock time" + time_zone_str)
+
+    if stored_data_keys:
+        for key in stored_data_keys:
+            table.add_column(f"{key}")
 
     for ji in jobs_info:
         state = ji.state.name
@@ -66,6 +76,8 @@ def get_job_info_table(jobs_info: list[JobInfo], verbosity: int) -> Table:
             ji.worker,
             convert_utc_time(ji.updated_on).strftime(fmt_datetime),
         ]
+        if skip_job_id:
+            row.pop(3)
 
         if verbosity >= 1:
             row.append(ji.remote.process_id)
@@ -97,6 +109,14 @@ def get_job_info_table(jobs_info: list[JobInfo], verbosity: int) -> Table:
                 if ji.lock_time
                 else None
             )
+
+        if stored_data_keys:
+            default_value = Text.from_markup("[italic grey58]none[/]")
+            stored_data = ji.stored_data
+            row += [
+                stored_data.get(key, default_value) if stored_data else default_value
+                for key in stored_data_keys
+            ]
 
         table.add_row(*row)
 

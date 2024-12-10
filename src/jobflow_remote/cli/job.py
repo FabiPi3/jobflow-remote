@@ -105,6 +105,22 @@ def jobs_list(
             help="Select the jobs in FAILED and REMOTE_ERROR state. Incompatible with the --state option",
         ),
     ] = False,
+    stored_data_keys: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--stored-data-key",
+            "-sdk",
+            help="Key to be shown from the stored_data field.",
+        ),
+    ] = None,
+    skip_job_id: Annotated[
+        bool,
+        typer.Option(
+            "--skip-job-id",
+            "-sji",
+            help="Skip the UUID field in the output table.",
+        ),
+    ] = False,
 ):
     """
     Get the list of Jobs in the database
@@ -163,7 +179,12 @@ def jobs_list(
                 sort=db_sort,
             )
 
-        table = get_job_info_table(jobs_info, verbosity=verbosity)
+        table = get_job_info_table(
+            jobs_info,
+            verbosity=verbosity,
+            stored_data_keys=stored_data_keys,
+            skip_job_id=skip_job_id,
+        )
 
     out_console.print(table)
     if SETTINGS.cli_suggestions:
