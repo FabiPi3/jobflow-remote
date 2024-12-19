@@ -30,6 +30,10 @@ class JobflowRemoteSettings(BaseSettings):
     cli_log_level: LogLevel = Field(
         LogLevel.WARN, description="The level set for logging in the CLI"
     )
+    cli_job_list_columns: list[str] = Field(
+        default_factory=list,
+        description="The list of columns to show in the `jf job list` command.",
+    )
 
     model_config = SettingsConfigDict(env_prefix="jfremote_")
 

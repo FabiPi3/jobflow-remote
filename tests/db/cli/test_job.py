@@ -32,6 +32,14 @@ def test_jobs_list(job_controller, two_flows_four_jobs) -> None:
         ["job", "list"], required_out=["Get more information about the errors"]
     )
 
+    outputs = ["WAITING", "READY", "none", "State", "DB id", "whatever"]
+    excluded = ["add1", "add2", "Name", "Job id"]
+    run_check_cli(
+        ["job", "list", "-hk", "state", "-hk", "db_id", "-sdk", "whatever"],
+        required_out=outputs,
+        excluded_out=excluded,
+    )
+
 
 def test_job_info(job_controller, two_flows_four_jobs) -> None:
     from jobflow_remote.testing.cli import run_check_cli

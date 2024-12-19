@@ -15,6 +15,7 @@ from jobflow_remote.cli.formatting import (
     format_job_info,
     get_job_info_table,
     get_job_report_components,
+    header_name_data_getter_map,
 )
 from jobflow_remote.cli.jf import app
 from jobflow_remote.cli.jfr_typer import JFRTyper
@@ -113,17 +114,17 @@ def jobs_list(
             help="Key to be shown from the stored_data field.",
         ),
     ] = None,
-    skip_job_id: Annotated[
-        bool,
+    header_keys: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--skip-job-id",
-            "-sji",
-            help="Skip the UUID field in the output table.",
+            "--header-keys",
+            "-hk",
+            help="Table columns to be shown. Overrides verbosity option. Can also be set in the config file",
         ),
-    ] = False,
+    ] = None,
 ):
     """
-    Get the list of Jobs in the database
+    Get the list of Jobs in the database.
     """
     check_incompatible_opt({"start_date": start_date, "days": days, "hours": hours})
     check_incompatible_opt({"end_date": end_date, "days": days, "hours": hours})
@@ -144,6 +145,11 @@ def jobs_list(
             worker_name,
         ],
     )
+    header_keys = header_keys or SETTINGS.cli_job_list_columns
+    if not set(header_keys).issubset(header_name_data_getter_map):
+        exit_with_error_msg(
+            f"Header keys not supported: {set(header_keys).difference(header_name_data_getter_map)}"
+        )
 
     job_ids_indexes = get_job_ids_indexes(job_id)
 
@@ -182,8 +188,8 @@ def jobs_list(
         table = get_job_info_table(
             jobs_info,
             verbosity=verbosity,
+            header_keys=header_keys,
             stored_data_keys=stored_data_keys,
-            skip_job_id=skip_job_id,
         )
 
     out_console.print(table)
