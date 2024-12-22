@@ -61,7 +61,7 @@ header_name_data_getter_map = {
         lambda ji: convert_utc_time(ji.updated_on).strftime(fmt_datetime),
     ),
     "queue_id": ("Queue id", lambda ji: ji.remote.process_id),
-    "run_time": ("Run time", format_run_time),
+    "run_time": (Text("Run time [h:mm]", no_wrap=True), format_run_time),
     "retry_time": (
         "Retry time" + time_zone_str,
         lambda ji: convert_utc_time(ji.remote.retry_time_limit).strftime(fmt_datetime)
@@ -86,40 +86,33 @@ header_name_data_getter_map = {
 def get_job_info_table(
     jobs_info: list[JobInfo],
     verbosity: int,
-    header_keys: list[str] | None = None,
+    output_keys: list[str] | None = None,
     stored_data_keys: list[str] | None = None,
 ) -> Table:
     stored_data_keys = stored_data_keys or []
-    all_header_keys = list(header_name_data_getter_map)
-    if not header_keys:
-        header_keys = all_header_keys[:6]
+    if not output_keys or verbosity > 0:
+        all_output_keys = list(header_name_data_getter_map)
+        output_keys = all_output_keys[:6]
         if verbosity >= 1:
-            header_keys += all_header_keys[6:10]
+            output_keys += all_output_keys[6:10]
         if verbosity == 1:
-            header_keys.append(all_header_keys[10])
+            output_keys.append(all_output_keys[10])
         if verbosity >= 2:
-            header_keys += all_header_keys[11:13]
+            output_keys += all_output_keys[11:13]
+    all_display_keys = output_keys + stored_data_keys
+
+    sdk_map = {
+        k: (k, lambda x, k=k: x.stored_data.get(k) if x.stored_data else None)
+        for k in stored_data_keys
+    }
+    full_map = header_name_data_getter_map | sdk_map
 
     table = Table(title="Jobs info")
-    for key in header_keys:
-        table.add_column(header_name_data_getter_map[key][0])
-    for key in stored_data_keys:
-        table.add_column(key)
-
-    default_stored_data_value = Text.from_markup("[italic grey58]none[/]")
+    for key in all_display_keys:
+        table.add_column(full_map[key][0])
 
     for ji in jobs_info:
-        table.add_row(
-            *(
-                [header_name_data_getter_map[key][1](ji) for key in header_keys]
-                + [
-                    ji.stored_data.get(key, default_stored_data_value)
-                    if ji.stored_data
-                    else default_stored_data_value
-                    for key in stored_data_keys
-                ]
-            )
-        )
+        table.add_row(*(full_map[key][1](ji) for key in all_display_keys))
 
     return table
 
