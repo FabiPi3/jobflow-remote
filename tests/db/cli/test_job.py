@@ -32,12 +32,22 @@ def test_jobs_list(job_controller, two_flows_four_jobs) -> None:
         ["job", "list"], required_out=["Get more information about the errors"]
     )
 
-    outputs = ["WAITING", "READY", "none", "State", "DB id", "whatever"]
+    outputs = ["WAITING", "READY", "State", "DB id", "whatever"]
     excluded = ["add1", "add2", "Name", "Job id"]
     run_check_cli(
-        ["job", "list", "-hk", "state", "-hk", "db_id", "-sdk", "whatever"],
+        ["job", "list", "-o", "state,db_id", "-sdk", "whatever"],
         required_out=outputs,
         excluded_out=excluded,
+    )
+
+    output = "Header keys not supported: {'not_existing_key'}"
+    run_check_cli(
+        ["job", "list", "-o", "state,not_existing_key"], required_out=output, error=True
+    )
+
+    output = "Options output, verbosity are incompatible"
+    run_check_cli(
+        ["job", "list", "-o", "state,name", "-vv"], required_out=output, error=True
     )
 
 
