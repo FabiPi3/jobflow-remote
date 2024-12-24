@@ -51,6 +51,30 @@ def test_jobs_list(job_controller, two_flows_four_jobs) -> None:
     )
 
 
+def test_jobs_list_settings(job_controller, two_flows_four_jobs, monkeypatch) -> None:
+    from jobflow_remote import SETTINGS
+    from jobflow_remote.testing.cli import run_check_cli
+
+    with monkeypatch.context() as m:
+        m.setattr(SETTINGS, "cli_job_list_columns", ["state", "db_id"])
+
+        outputs = ["WAITING", "READY", "State", "DB id"]
+        excluded = ["add1", "add2", "Name", "Job id"]
+        run_check_cli(
+            ["job", "list"],
+            required_out=outputs,
+            excluded_out=excluded,
+        )
+
+        # using -v will lead to a very large table which isn't fully displayed
+        columns = ["DB", "id", "Name", "Sta", "Job", "id", "Wor", "Last", "Loc"]
+        outputs = columns + [f"add{i}" for i in range(1, 5)] + ["REA", "WAI"]
+        run_check_cli(
+            ["job", "list", "-v"],
+            required_out=outputs,
+        )
+
+
 def test_job_info(job_controller, two_flows_four_jobs) -> None:
     from jobflow_remote.testing.cli import run_check_cli
 
